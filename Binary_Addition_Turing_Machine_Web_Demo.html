@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binary Addition Using Turing Machine</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--blue:#2563eb;--line:#dbe3ef;--green:#15803d}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#eef4ff,#f8fafc);color:var(--ink);min-height:100vh}
+header{background:#14213d;color:white;padding:28px 18px;text-align:center}
+header h1{margin:0 0 9px;font-size:clamp(23px,4vw,34px)}
+header p{margin:0;color:#dbeafe}
+main{max-width:960px;margin:28px auto;padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px;box-shadow:0 8px 25px #1e3a8a0d}
+h2{font-size:20px;margin:0 0 15px}
+.inputs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{display:block;font-weight:700;margin-bottom:7px}
+input{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:9px;font-size:18px;letter-spacing:2px}
+button{border:0;border-radius:9px;padding:12px 19px;font-weight:700;font-size:15px;cursor:pointer}
+.primary{background:var(--blue);color:white;margin-top:16px}
+.secondary{background:#e8eef8;color:#1e293b;margin-left:8px}
+button:hover{filter:brightness(.96)}
+.hint{color:var(--muted);font-size:13px;margin:10px 0 0}
+.error{color:#b91c1c;font-weight:700;margin-top:12px}
+.result{font-size:28px;font-weight:800;color:var(--green);letter-spacing:3px;overflow-wrap:anywhere}
+.resultbox{background:#f0fdf4;border:1px solid #bbf7d0;padding:16px;border-radius:12px;margin-top:12px}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:11px 9px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+th{background:#eff6ff}
+.badge{display:inline-block;background:#dbeafe;color:#1d4ed8;padding:4px 9px;border-radius:20px;font-weight:700}
+.machine{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tape{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:13px;text-align:center}
+.tape strong{display:block;margin-bottom:8px}
+.bits{font-family:monospace;font-size:20px;letter-spacing:4px;overflow-wrap:anywhere}
+footer{text-align:center;color:var(--muted);padding:10px 16px 30px;font-size:13px}
+@media(max-width:620px){.inputs,.machine{grid-template-columns:1fr}.secondary{margin:10px 0 0 0}.card{padding:17px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Binary Addition Using Turing Machine</h1>
+  <p>Theory of Computation · Interactive Project Demonstration</p>
+</header>
+<main>
+  <section class="card">
+    <h2>Enter Binary Numbers</h2>
+    <div class="inputs">
+      <div><label for="a">First Binary Number (A)</label><input id="a" value="101" inputmode="numeric" maxlength="64" placeholder="Example: 101"></div>
+      <div><label for="b">Second Binary Number (B)</label><input id="b" value="011" inputmode="numeric" maxlength="64" placeholder="Example: 011"></div>
+    </div>
+    <button class="primary" onclick="calculate()">Calculate Sum</button>
+    <button class="secondary" onclick="resetDemo()">Reset</button>
+    <p class="hint">Enter only 0 and 1. Example: 101 + 011 = 1000.</p>
+    <div id="error" class="error" role="alert"></div>
+    <div id="resultArea"></div>
+  </section>
+
+  <section class="card" id="stepsCard" hidden>
+    <h2>Step-by-Step Turing Machine Simulation</h2>
+    <p>Reading proceeds from right to left (least significant bit first). Missing bits are treated as 0.</p>
+    <div class="machine" id="tapes"></div>
+    <div style="margin-top:18px" class="table-wrap">
+      <table>
+        <thead><tr><th>Step</th><th>Read A</th><th>Read B</th><th>Carry In</th><th>Write Bit</th><th>Next State</th></tr></thead>
+        <tbody id="steps"></tbody>
+      </table>
+    </div>
+    <p class="hint"><span class="badge">q0</span> means carry = 0 &nbsp; <span class="badge">q1</span> means carry = 1 &nbsp; <span class="badge">qhalt</span> means computation finished.</p>
+  </section>
+
+  <section class="card">
+    <h2>How This Model Works</h2>
+    <ol>
+      <li>Tape 1 stores the first binary number.</li>
+      <li>Tape 2 stores the second binary number.</li>
+      <li>Tape 3 stores the result bits.</li>
+      <li>The machine adds one pair of bits at a time, moving from right to left.</li>
+      <li>The carry determines whether the machine is in state q0 or q1.</li>
+    </ol>
+    <p class="hint">This is an educational Python-free browser simulation of the same three-tape Turing Machine-style addition logic.</p>
+  </section>
+</main>
+<footer>Student: C. Varun · Register No: 2024BTAM042</footer>
+<script>
+function calculate(){
+  const A=document.getElementById('a').value.trim();
+  const B=document.getElementById('b').value.trim();
+  const error=document.getElementById('error');
+  const area=document.getElementById('resultArea');
+  const stepsBody=document.getElementById('steps');
+  error.textContent=''; area.innerHTML=''; stepsBody.innerHTML='';
+  if(!A || !B){error.textContent='Please enter both binary numbers.';return;}
+  if(!/^[01]+$/.test(A) || !/^[01]+$/.test(B)){error.textContent='Invalid input! Use only 0 and 1.';return;}
+  const ar=A.split('').reverse(), br=B.split('').reverse();
+  let carry=0, head=0, resultBits='', rows='';
+  const count=Math.max(ar.length,br.length);
+  while(head<count || carry===1){
+    const x=head<ar.length?Number(ar[head]):0;
+    const y=head<br.length?Number(br[head]):0;
+    const carryIn=carry;
+    const total=x+y+carryIn;
+    const bit=total%2;
+    carry=Math.floor(total/2);
+    resultBits+=String(bit);
+    rows+=`<tr><td>${head+1}</td><td>${x}</td><td>${y}</td><td>${carryIn}</td><td><strong>${bit}</strong></td><td><span class="badge">q${carry}</span></td></tr>`;
+    head++;
+  }
+  let result=resultBits.split('').reverse().join('').replace(/^0+(?=\\d)/,'') || '0';
+  stepsBody.innerHTML=rows;
+  document.getElementById('tapes').innerHTML=`
+    <div class="tape"><strong>Tape 1 · Input A</strong><div class="bits">${A}</div></div>
+    <div class="tape"><strong>Tape 2 · Input B</strong><div class="bits">${B}</div></div>
+    <div class="tape"><strong>Tape 3 · Result</strong><div class="bits">${result}</div></div>`;
+  document.getElementById('stepsCard').hidden=false;
+  area.innerHTML=`<div class="resultbox"><div>Final Binary Sum</div><div class="result">${result}</div><div>${A} + ${B} = ${result}</div></div>`;
+}
+function resetDemo(){
+ document.getElementById('a').value='';
+ document.getElementById('b').value='';
+ document.getElementById('error').textContent='';
+ document.getElementById('resultArea').innerHTML='';
+ document.getElementById('steps').innerHTML='';
+ document.getElementById('stepsCard').hidden=true;
+ document.getElementById('tapes').innerHTML='';
+}
+calculate();
+</script>
+</body>
+</html>
